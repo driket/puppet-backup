@@ -1,0 +1,66 @@
+
+#!/bin/sh
+#
+# THIS FILE IS MANAGED BY PUPPET
+# <%= file %>
+#
+# Save all mail account and backup via FTP
+#
+
+BACKUP_DIR=<%= @directory %>
+
+#server setup
+BACKUP_SERVER=<%= @server %>
+BACKUP_NAME=<%= @name %>
+REMOTE_DIR="<%= @remote_url %>"
+LOG_FILE="/var/log/backup.log"
+
+<% if @tarball == true -%>
+# backup temp directory
+
+BACKUP_DIRECTORY=<%= @temp_directory %>
+BACKUP_TARBALL_DIR=${BACKUP_DIRECTORY}/${BACKUP_NAME}
+BACKUP_TARBALL=${BACKUP_TARBALL_DIR}/${BACKUP_NAME}-backup.tar
+<% end -%>
+
+# for cron
+SHELL=/bin/bash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+HOME=/root
+
+<% if @tarball == true -%>
+# Initial backup setup
+mkdir -p $BACKUP_TARBALL_DIR
+
+# Phase : Archive
+echo "`date` ----- archiving... ${BACKUP_NAME} -> ${BACKUP_TARBALL} ----" >> $LOG_FILE
+rm -f ${BACKUP_TARBALL}
+tar -cvf ${BACKUP_TARBALL} ${BACKUP_DIR} 2>/dev/null
+echo "`date` [${BACKUP_NAME}] tar exited with code $?" >> $LOG_FILE
+<% end -%>
+
+<% if @method == 'lftp' -%>
+# Phase : send via FTP
+echo "`date` lftp ${BACKUP_TARBALL} -> ${REMOTE_DIR}" >> $LOG_FILE
+lftp -e "set ftp:list-option \"-a\" && mirror --reverse --delete --only-newer ${BACKUP_TARBALL_DIR} ${REMOTE_DIR} && exit" $BACKUP_SERVER
+echo "`date` [${BACKUP_NAME}] lftp exited with code $?" >> $LOG_FILE
+<% elsif @method == 'ssh' -%>
+# Phase : send via SSH
+echo "`date` - rsync ${BACKUP_DIR} -> " >> $LOG_FILE
+scp -Rf ${BACKUP_DIR} ${BACKUP_SERVER}:<%= @remote_url %>
+echo "`date` - rsync ${BACKUP_DIR} finished with code $?" >> $LOG_FILE
+<% elsif @method == 'rsync' -%>
+# Phase : send via rsync
+echo "`date` - rsync ${BACKUP_DIR} -> " >> $LOG_FILE
+rsync -av --numeric-ids ${BACKUP_DIR} ${BACKUP_SERVER}:<%= @remote_url %>
+echo "`date` - rsync ${BACKUP_DIR} finished with code $?" >> $LOG_FILE
+<% end -%>
+
+<% if @tarball == true -%>
+# Phase : Cleanup
+rm ${BACKUP_TARBALL}
+<% end -%>
+
+# Phase : exit
+exit 0
