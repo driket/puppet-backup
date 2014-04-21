@@ -15,6 +15,14 @@ BACKUP_NAME=<%= @name %>
 REMOTE_DIR="<%= @remote_url %>"
 LOG_FILE="/var/log/backup.log"
 
+<% if @method == 'lftp' -%>
+LFTP_ARGS="<%= @ftp_options['args'] %>"
+<% elsif @method == 'ssh' -%>
+SCP_ARGS="<%= @ssh_options['args'] %>"
+<% elsif @method == 'rsync' -%>
+RSYNC_ARGS="<%= @rsync_options['args'] %>"
+<% end %>
+
 <% if @tarball == true -%>
 # backup temp directory
 
@@ -43,17 +51,17 @@ echo "`date` [${BACKUP_NAME}] tar exited with code $?" >> $LOG_FILE
 <% if @method == 'lftp' -%>
 # Phase : send via FTP
 echo "`date` lftp ${BACKUP_TARBALL} -> ${REMOTE_DIR}" >> $LOG_FILE
-lftp -e "set ftp:list-option \"-a\" && mirror --reverse --delete --only-newer ${BACKUP_TARBALL_DIR} ${REMOTE_DIR} && exit" $BACKUP_SERVER
+lftp -e "set ftp:list-option \"-a\" && mirror ${LFTP_ARGS} ${BACKUP_TARBALL_DIR} ${REMOTE_DIR} && exit" $BACKUP_SERVER
 echo "`date` [${BACKUP_NAME}] lftp exited with code $?" >> $LOG_FILE
 <% elsif @method == 'ssh' -%>
 # Phase : send via SSH
 echo "`date` - rsync ${BACKUP_DIR} -> " >> $LOG_FILE
-scp -Rf ${BACKUP_DIR} ${BACKUP_SERVER}:<%= @remote_url %>
+scp ${SCP_ARGS} ${BACKUP_DIR} ${BACKUP_SERVER}:<%= @remote_url %>
 echo "`date` - rsync ${BACKUP_DIR} finished with code $?" >> $LOG_FILE
 <% elsif @method == 'rsync' -%>
 # Phase : send via rsync
 echo "`date` - rsync ${BACKUP_DIR} -> " >> $LOG_FILE
-rsync -av --numeric-ids ${BACKUP_DIR} ${BACKUP_SERVER}:<%= @remote_url %>
+rsync ${RSYNC_ARGS} ${BACKUP_DIR} ${BACKUP_SERVER}:<%= @remote_url %>
 echo "`date` - rsync ${BACKUP_DIR} finished with code $?" >> $LOG_FILE
 <% end -%>
 

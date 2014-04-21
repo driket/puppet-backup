@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# THIS FILE IS MANAGED BY PUPPET
+# <%= file %>
+#
+# description   : init rsync backup -> copy ssh pub key to host's authorized keys
+# author        : Cédric Villa
+
+BACKUP_SERVER=<%= @server %>
+
+#if local key doesn't exist, create it
+if [ ! -f /root/.ssh/id_rsa ]; then
+  echo "-------> gen id_rsa key"
+  ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+fi
+
+echo "-------> fetch authorized keys from backup server"
+BACKUP_SERVER_AUTHORIZED_KEYS=`ssh $BACKUP_SERVER /bin/cat /root/.ssh/authorized_keys2`
+
+echo "-------> check if local key is already present"
+LOCAL_KEY=`/bin/cat /root/.ssh/id_rsa.pub`
+
+if echo "$BACKUP_SERVER_AUTHORIZED_KEYS" | /bin/grep -q "$LOCAL_KEY" ; then
+  echo "local key is already present on backup host"
+  exit 0
+fi
+
+echo "local key has not been found on backup host"
+echo "-------> send local key to backup server's authorized keys"
+ssh $BACKUP_SERVER "/bin/echo $LOCAL_KEY >> /root/.ssh/authorized_keys2"
+
+echo "done"
+exit 0

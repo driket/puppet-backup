@@ -6,32 +6,7 @@ class mv_backup::config {
     mode 		=> "0755",
     owner 	=> 'root',
     group 	=> 'root',
-		require => Package['mv_backup'],
+		require => Package['lftp','rsync'],
   }
-	
-	case $method {
-
-		'rsync': {
-
-				# nothing to do
-
-		}
-		
-	  'lftp': {
 			
-			file { "/root/.netrc":
-		  	ensure 	=> file,
-		    content => template("mv_backup/netrc.erb"),
-		    mode 		=> "0600",
-		    owner 	=> 'root',
-		    group 	=> 'root',
-				require => Package["mv_backup"],
-		  }
-	  }
-		
-	  default: {
-			
-	  	fail("Wrong backup method ${method} (rsync, lftp, etc.)")
-	  }		
-	} # end case method
 }

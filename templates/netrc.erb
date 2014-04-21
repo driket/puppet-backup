@@ -1,5 +1,3 @@
-<% if @method == 'lftp' -%>
 machine <%= @server %>
-login <%= @ftp_options["login"] %>
-password <%= @ftp_options["password"] %>
-<% end -%>
+login <%= @login %>
+password <%= @password %>

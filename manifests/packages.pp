@@ -1,9 +1,15 @@
 class mv_backup::packages {
 	require('mv_backup::params')
-
-	package {'mv_backup':
-		name 		=> $mv_backup::params::packages,
-		ensure 		=> present,
+	
+	if ! defined(Package['lftp']) {
+		package {'lftp':
+			ensure => present,
+		}
+	}
+	if ! defined(Package['rsync']) {
+		package {'rsync':
+			ensure => present,
+		}
 	}
 
 }

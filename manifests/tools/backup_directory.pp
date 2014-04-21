@@ -2,14 +2,22 @@ define mv_backup::tools::backup_directory (
 	$directory, 
 	$server,
 	$method,
-	$ftp_options = {},
+	$lftp_options 		= {
+		args => "--reverse --delete --only-newer"
+	},
+	$ssh_options 		= {
+		args => "-Rf",	
+	},
+	$rsync_options 	= {
+		args => "-avz --numeric-ids --delete",
+	},
 	$remote_url,
-	$tarball = false,
-	$hour = "*", 
-	$minute = "30", 
-	$monthday = "*", 
-	$month = "*",
-	$weekday = "*",
+	$tarball 				= false,
+	$hour 					= "*", 
+	$minute 				= "30", 
+	$monthday 			= "*", 
+	$month 					= "*",
+	$weekday 				= "*",
 	$temp_directory = $mv_backup::params::temp_directory)
 {
 	require('mv_backup::packages')
